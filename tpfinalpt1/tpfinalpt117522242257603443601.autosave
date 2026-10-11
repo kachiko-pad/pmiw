@@ -1,0 +1,308 @@
+// Los arreglos de pantallas se relacionan por posición: el índice 0 corresponde a la pantalla 1.
+var textosPantallas = [
+    "El Pequeño Detective está en su oficina tomando leche. ¡Suena el teléfono! La Nona dice: «¡Mi pastel de cumpleaños ha desaparecido!».", // Pantalla 1
+    "Llegas a la cocina. Hay harina en el suelo y dos rastros de glaseado: uno verde que va al jardín y uno morado hacia el pasillo.", // Pantalla 2
+    "Sigues el rastro verde hasta el jardín. Entre las plantas, descubres al Gatito Chibi con la cara manchada de glaseado.", // Pantalla 3
+    "El Gatito confiesa asustado: «¡Miau! Probé un poco, pero el Zorrito también andaba por aquí merodeando».", // Pantalla 4
+    "Decides investigar también el otro rastro y vas al pasillo de la biblioteca. Ves una cola esponjosa detrás del sillón.", // Pantalla 5
+    "¡Es el Zorrito Chibi! Esconde una cucharita con glaseado morado y dice: «¡Yo no fui, el pastel estaba abierto! Pero vi al Gatito cerca».", // Pantalla 6
+    "Reúnes a ambos sospechosos en la sala principal. El Gatito y el Zorrito se señalan y se culpan mutuamente.", // Pantalla 7
+    "La Nona entra a la sala y revela un detalle clave: ¡Su pastel tenía dos pisos! El inferior era verde y el superior morado.", // Pantalla 8
+    "Observas la bandeja vacía: tiene marcas de garras pequeñas abajo y marcas de cucharita arriba.", // Pantalla 9
+    "Al verse descubiertos, el Gatito admite haberse comido la base verde y el Zorrito la copa morada.", // Pantalla 10
+    "Sin embargo, ambos aseguran que la alacena estaba abierta de par en par por culpa del viento.", // Pantalla 11
+    "Inspeccionas la alacena y confirmas que el pestillo está flojo. ¡Cayeron en la tentación al ver el pastel sin protección!", // Pantalla 12
+    "La Nona espera pacientemente tu decisión final en medio de la sala. Todos te miran expectantes.", // Pantalla 13
+    "¿Cuál es tu veredicto final para resolver el misterio del pastel desaparecido?", // Pantalla 14
+    "¡Espera, hay una última pista! Notas huellas diminutas que vienen desde la ventana abierta del fondo...", // Pantalla 15
+    "¡FINAL 1: Culpa compartida!\nResponsabilizas al Gatito y al Zorrito. Ambos piden perdón y ayudan a la Nona a hornear un pastel nuevo.", // Final 1 (Pantalla 16)
+    "¡FINAL 2: Solo el Gatito!\nCulpas únicamente al Gatito por las huellas del jardín. El Zorrito queda libre, aunque todavía hay dudas.", // Final 2 (Pantalla 17)
+    "¡FINAL 3: Nadie es culpable!\nDecides no culpar a nadie. La Nona comparte unas galletas con todos y el misterio queda sin resolver."  // Final 3 (Pantalla 18)
+];
+
+// Este número elige qué personaje aparece en cada pantalla.
+// 1 detective, 2 Nona, 3 gato, 4 zorro, 5 ambos, 6 detective del veredicto.
+var spritesPantallas = [
+    1, 2, 3, 3, 4, 4, 5, 2, 1, 5, 1, 1, 2, 6, 1, 0, 0, 0
+];
+
+// Cada grupo contiene los botones que aparecen en esa pantalla.
+var opcionesPantallas = [
+    ["¡Aceptar el caso e ir a la cocina!"], // 1
+    ["Seguir el rastro verde (Gatito)", "Seguir el rastro morado (Zorrito)"], // 2 -> Permite elegir por dónde empezar
+    ["Interrogar al Gatito Chibi"], // 3
+    ["Ir a investigar el rastro morado del pasillo"], // 4 -> Une la historia con el otro personaje
+    ["Echar un vistazo detrás del sillón"], // 5
+    ["Llevar al Zorrito a la sala con los demás"], // 6 -> Une con la sala principal
+    ["Escuchar la revelación de la Nona"], // 7
+    ["Examinar la bandeja vacía"], // 8
+    ["Interrogar a ambos sospechosos"], // 9
+    ["Preguntar por la alacena"], // 10
+    ["Inspeccionar el pestillo de la alacena"], // 11
+    ["Reunir a todos para el veredicto"], // 12
+    ["Tomar la decisión final"], // 13
+    ["Culpabilidad compartida", "Culpar solo al Gatito", "No culpar a nadie"], // 14 -> Veredictos claros
+    ["Ver el resultado del caso"], // 15
+    ["Volver al Inicio"], // Final 1
+    ["Volver al Inicio"], // Final 2
+    ["Volver al Inicio"]  // Final 3
+];
+
+// Cada destino coincide con el botón de la misma posición en opcionesPantallas.
+var destinosPantallas = [
+    [2],             // 1 -> 2
+    [3, 5],          // 2 -> Elige ir al rastro del Gatito (3) o del Zorrito (5)
+    [4],             // 3 -> 4
+    [6],             // 4 -> 6 (Del Gatito pasa al Zorrito en el pasillo)
+    [6],             // 5 -> 6 (O si fue directo al Zorrito, llega al punto de encuentro)
+    [7],             // 6 -> 7 (Reunión en la sala con ambos)
+    [8],             // 7 -> 8
+    [9],             // 8 -> 9
+    [10],            // 9 -> 10
+    [11],            // 10 -> 11
+    [12],            // 11 -> 12
+    [13],            // 12 -> 13
+    [14],            // 13 -> 14
+    [16, 17, 18],    // 14 -> Conduce directamente a los 3 finales (16, 17 o 18)
+    [16],            // 15 
+    [1], [1], [1]    // Finales devuelven al inicio
+];
+
+// Variables de control de recursos y estado
+var fondoBase;
+var sprites = [];
+var finales = [];
+var spriteListo = [];
+var finalListo = [];
+var fondoListo = false;
+
+var pantallaActual = 1;
+var creditosVisibles = false;
+var musicaFondo;
+
+var botonesX = [];
+var botonesY = [];
+var botonesAncho = [];
+var botonesAlto = [];
+var botonesTipo = [];
+var botonesDestino = [];
+var cantidadBotones = 0;
+
+function preload() {
+    // p5 carga las imágenes antes de empezar a dibujar la aventura.
+    fondoBase = loadImage("assets/fondo.png", function() {
+        fondoListo = true;
+    }, function() {
+        console.log("No se encontró fondo.png, se usará respaldo.");
+    });
+
+    sprites[1] = loadImage("assets/detective1.png", function() { spriteListo[1] = true; });
+    sprites[2] = loadImage("assets/nona.png", function() { spriteListo[2] = true; });
+    sprites[3] = loadImage("assets/gato.png", function() { spriteListo[3] = true; });
+    sprites[4] = loadImage("assets/zorro.png", function() { spriteListo[4] = true; });
+    sprites[6] = loadImage("assets/detective2.png", function() { spriteListo[6] = true; });
+
+    finales[1] = loadImage("assets/final1.png", function() { finalListo[1] = true; });
+    finales[2] = loadImage("assets/final2.png", function() { finalListo[2] = true; });
+    finales[3] = loadImage("assets/final3.png", function() { finalListo[3] = true; });
+}
+
+function setup() {
+    // Crea el lienzo una sola vez y configura el estilo del texto y las imágenes.
+    createCanvas(800, 450);
+    musicaFondo = new Audio("assets/musicadefondo.mp3");
+    musicaFondo.loop = true;
+    musicaFondo.volume = 0.35;
+    textFont("Georgia");
+    textLeading(25);
+    imageMode(CORNER);
+    rectMode(CORNER);
+}
+
+function draw() {
+    // draw se repite continuamente; se reinicia el conteo de botones en cada vuelta.
+    cantidadBotones = 0;
+
+    if (creditosVisibles === true) {
+        dibujarCreditos();
+        return;
+    }
+
+    // Las pantallas 1 a 15 usan el fondo común; las siguientes son los finales.
+    if (pantallaActual <= 15) {
+        dibujarFondoBase();
+    } else {
+        dibujarFondoFinal();
+    }
+
+    dibujarCabecera();
+    dibujarNarrativa(textosPantallas[pantallaActual - 1]);
+
+    if (pantallaActual <= 15) {
+        dibujarSprite(spritesPantallas[pantallaActual - 1], 548, 190, 230, 245);
+    }
+
+    // Restamos uno porque los arreglos empiezan en el índice 0.
+    var indice = pantallaActual - 1;
+    var numeroOpcion;
+    for (numeroOpcion = 0; numeroOpcion < opcionesPantallas[indice].length; numeroOpcion = numeroOpcion + 1) {
+        var alto = 52;
+        var x = 32;
+        var y = 218 + numeroOpcion * 62;
+        dibujarBoton(opcionesPantallas[indice][numeroOpcion], x, y, 500, alto, 1, destinosPantallas[indice][numeroOpcion]);
+    }
+
+    dibujarBoton("Créditos", 665, 17, 108, 30, 2, 0);
+}
+
+function dibujarFondoBase() {
+    // Si no se pudo cargar el fondo, dibuja uno sencillo como respaldo.
+    if (fondoListo === true) {
+        image(fondoBase, 0, 0, 800, 450);
+    } else {
+        background(190, 220, 211);
+        noStroke();
+        fill(235, 220, 183);
+        rect(0, 0, 800, 318);
+        fill(177, 128, 92);
+        rect(0, 318, 800, 132);
+    }
+}
+
+function dibujarFondoFinal() {
+    // Las pantallas 16, 17 y 18 corresponden a los finales 1, 2 y 3.
+    var numeroFinal = pantallaActual - 15;
+
+    if (finalListo[numeroFinal] === true) {
+        background(190, 220, 211);
+        image(finales[numeroFinal], 0, 0, 800, 450);
+    } else {
+        background(139, 190, 151);
+    }
+}
+
+function dibujarCabecera() {
+    // Muestra el título y el número de pantalla o de final.
+    noStroke();
+    fill(42, 65, 62, 220);
+    rect(0, 0, 800, 48);
+    fill(255, 247, 222);
+    textAlign(LEFT, CENTER);
+    textStyle(BOLD);
+    textSize(18);
+    text("¿QUIÉN COMIÓ EL PASTEL DE LA NONA?", 25, 24);
+    textStyle(NORMAL);
+    textAlign(RIGHT, CENTER);
+    textSize(13);
+
+    if (pantallaActual <= 15) {
+        text("PANTALLA " + pantallaActual + " / 15", 642, 24);
+    } else {
+        text("FINAL " + (pantallaActual - 15) + " / 3", 642, 24);
+    }
+}
+
+function dibujarNarrativa(texto) {
+    // Dibuja el recuadro claro y el texto de la historia.
+    noStroke();
+    fill(255, 249, 230, 236);
+    rect(24, 58, 752, 132, 14);
+    fill(48, 59, 52);
+    textAlign(LEFT, TOP);
+    textSize(17);
+    textLeading(23);
+    text(texto, 44, 76, 710, 100);
+    textLeading(25);
+}
+
+function dibujarSprite(numero, x, y, ancho, alto) {
+    // El valor 5 dibuja a los dos sospechosos usando sus sprites individuales.
+    if (numero === 5) {
+        dibujarSprite(3, x - 18, y + 38, ancho * 0.58, alto * 0.82);
+        dibujarSprite(4, x + ancho * 0.43, y + 38, ancho * 0.58, alto * 0.82);
+        return;
+    }
+
+    if (numero > 0 && spriteListo[numero] === true) {
+        image(sprites[numero], x, y, ancho, alto);
+    } else if (numero > 0) {
+        fill(220, 175, 125);
+        noStroke();
+        ellipse(x + ancho / 2, y + alto / 2, ancho * 0.7, alto * 0.7);
+    }
+}
+
+function dibujarBoton(etiqueta, x, y, ancho, alto, tipo, destino) {
+    // Cambia el color cuando el cursor pasa sobre el botón.
+    var encima = false;
+    if (mouseX >= x && mouseX <= x + ancho && mouseY >= y && mouseY <= y + alto) {
+        encima = true;
+    }
+
+    noStroke();
+    if (encima === true) {
+        fill(51, 105, 94);
+    } else {
+        fill(43, 79, 72);
+    }
+    rect(x, y, ancho, alto, 11);
+    fill(250, 230);
+    textAlign(LEFT, CENTER);
+    textSize(15);
+    text(etiqueta, x + 18, y + alto / 2);
+
+    // Guarda la posición y la acción para detectar después los clics.
+    botonesX[cantidadBotones] = x;
+    botonesY[cantidadBotones] = y;
+    botonesAncho[cantidadBotones] = ancho;
+    botonesAlto[cantidadBotones] = alto;
+    botonesTipo[cantidadBotones] = tipo;
+    botonesDestino[cantidadBotones] = destino;
+    cantidadBotones = cantidadBotones + 1;
+}
+
+function dibujarCreditos() {
+    // Los créditos aparecen sobre el fondo oscurecido.
+    dibujarFondoBase();
+    noStroke();
+    fill(30, 43, 42, 226);
+    rect(0, 0, 800, 450);
+    fill(255, 243, 208);
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(25);
+    text("CRÉDITOS", 400, 70);
+    textStyle(NORMAL);
+    textSize(18);
+    text("¿Quién comió el pastel de la Nona?", 400, 128);
+    text("Una aventura de detectives chibi", 400, 174);
+    text("Ilustraciones, programación y narrativa", 400, 226);
+    text("Maia Florencia Romero 122873/2", 400, 256);
+    text("Hecho con p5.js", 400, 310);
+    text("Gracias por jugar", 400, 350);
+
+    dibujarBoton("Volver a la aventura", 32, 393, 180, 40, 3, 0);
+}
+
+function mousePressed() {
+    // La música empieza con el primer clic porque el navegador bloquea el autoplay.
+    if (musicaFondo.paused === true) {
+        musicaFondo.play();
+    }
+
+    // Revisa qué botón se presionó y ejecuta su acción.
+    var i;
+    for (i = 0; i < cantidadBotones; i = i + 1) {
+        if (mouseX >= botonesX[i] && mouseX <= botonesX[i] + botonesAncho[i] && mouseY >= botonesY[i] && mouseY <= botonesY[i] + botonesAlto[i]) {
+            if (botonesTipo[i] === 2) {
+                // Tipo 2 abre los créditos y tipo 3 vuelve a la aventura.
+                creditosVisibles = true;
+            } else if (botonesTipo[i] === 3) {
+                creditosVisibles = false;
+            } else {
+                pantallaActual = botonesDestino[i];
+            }
+            return false;
+        }
+    }
+}
